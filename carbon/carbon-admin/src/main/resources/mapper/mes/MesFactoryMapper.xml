@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhonghui.mes.mapper.MesFactoryMapper">
+
+    <resultMap type="MesFactoryVo" id="MesFactoryResult">
+        <result property="id"    column="id"    />
+        <result property="materialId"    column="material_id"    />
+        <result property="materialName"    column="material_name"    />
+        <result property="materialModel"    column="material_model"    />
+        <result property="materialSpecifications"    column="material_specifications"    />
+        <result property="productionLine"    column="production_line"    />
+        <result property="factoryDescribe"    column="factory_describe"    />
+    </resultMap>
+
+    <resultMap id="MesFactoryMesFactoryDeviceItemResult" type="MesFactoryVo" extends="MesFactoryResult">
+        <collection property="mesFactoryDeviceItemList" notNullColumn="sub_id" javaType="java.util.List" resultMap="MesFactoryDeviceItemResult" />
+    </resultMap>
+
+    <resultMap type="MesFactoryDeviceItemVo" id="MesFactoryDeviceItemResult">
+        <result property="id"    column="sub_id"    />
+        <result property="factoryId"    column="sub_factory_id"    />
+        <result property="deviceId"    column="sub_device_id"    />
+        <result property="deviceName"    column="sub_device_name"    />
+        <result property="deviceCode"    column="sub_device_code"    />
+        <result property="deviceModel"    column="sub_device_model"    />
+        <result property="produceDate"    column="sub_produce_date"    />
+        <result property="produceCode"    column="sub_produce_code"    />
+        <result property="manufacturer"    column="sub_manufacturer"    />
+    </resultMap>
+
+    <sql id="selectMesFactoryVo">
+        select a.id, a.material_id, b.material_name, a.production_line, b.material_model, b.material_specifications, a.factory_describe from mes_factory a
+    </sql>
+
+    <select id="selectMesFactoryList" parameterType="MesFactory" resultMap="MesFactoryResult">
+        <include refid="selectMesFactoryVo"/>
+        left join wms_material b on a.material_id = b.id
+        <where>
+            <if test="productionLine != null  and productionLine != ''"> and production_line like concat('%', #{productionLine}, '%')</if>
+            <if test="materialId != null  and materialId != ''"> and material_id = #{materialId}</if>
+        </where>
+    </select>
+
+    <select id="selectMesFactoryById" parameterType="Long" resultMap="MesFactoryMesFactoryDeviceItemResult">
+        select a.id, a.material_id, c.material_name, a.production_line, c.material_model, c.material_specifications, a.factory_describe,
+               b.id as sub_id, b.device_id as sub_device_id, d.device_name as sub_device_name, d.device_code as sub_device_code, d.device_model as sub_device_model, d.produce_date as sub_produce_date, d.produce_code as sub_produce_code, d.manufacturer as sub_manufacturer, b.factory_id as sub_factory_id
+        from mes_factory a
+                 left join mes_factory_device_item b on b.factory_id = a.id
+                 left join wms_material c on a.material_id = c.id
+                 left join mes_device_information d on d.id = b.device_id
+        where a.id = #{id}
+    </select>
+
+    <insert id="insertMesFactory" parameterType="MesFactory" useGeneratedKeys="true" keyProperty="id">
+        insert into mes_factory
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="materialId != null and materialId != ''">material_id,</if>
+            <if test="productionLine != null and productionLine != ''">production_line,</if>
+            <if test="factoryDescribe != null">factory_describe,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="materialId != null and materialId != ''">#{materialId},</if>
+            <if test="productionLine != null and productionLine != ''">#{productionLine},</if>
+            <if test="factoryDescribe != null">#{factoryDescribe},</if>
+        </trim>
+    </insert>
+
+    <update id="updateMesFactory" parameterType="MesFactory">
+        update mes_factory
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="materialId != null and materialId != ''">material_id = #{materialId},</if>
+            <if test="productionLine != null and productionLine != ''">production_line = #{productionLine},</if>
+            <if test="factoryDescribe != null">factory_describe = #{factoryDescribe},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMesFactoryById" parameterType="Long">
+        delete from mes_factory where id = #{id}
+    </delete>
+
+    <delete id="deleteMesFactoryByIds" parameterType="String">
+        delete from mes_factory where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteMesFactoryDeviceItemByFactoryIds" parameterType="String">
+        delete from mes_factory_device_item where factory_id in
+        <foreach item="factoryId" collection="array" open="(" separator="," close=")">
+            #{factoryId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteMesFactoryDeviceItemByFactoryId" parameterType="Long">
+        delete from mes_factory_device_item where factory_id = #{factoryId}
+    </delete>
+
+    <insert id="batchMesFactoryDeviceItem">
+        insert into mes_factory_device_item( id, factory_id, device_id) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.id}, #{item.factoryId}, #{item.deviceId})
+        </foreach>
+    </insert>
+</mapper>

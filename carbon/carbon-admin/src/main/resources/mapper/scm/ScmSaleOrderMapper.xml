@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhonghui.scm.mapper.ScmSaleOrderMapper">
+    
+    <resultMap type="ScmSaleOrderVo" id="ScmSaleOrderResult">
+        <result property="id"    column="id"    />
+        <result property="orderNo"    column="order_no"    />
+<!--        <result property="scheduleId"    column="schedule_id"    />-->
+        <result property="customId"    column="custom_id"    />
+        <result property="customName"    column="custom_name"    />
+        <result property="linkman"    column="linkman"    />
+        <result property="linkmanPhoneNumber"    column="linkman_phone_number"    />
+        <result property="totalAmount"    column="total_amount"    />
+        <result property="deliveryDate"    column="delivery_date"    />
+        <result property="applyId"    column="apply_id"    />
+        <result property="applyName"    column="apply_name"    />
+        <result property="applyDate"    column="apply_date"    />
+        <result property="applyStatus"    column="apply_status"    />
+        <result property="auditorId"    column="auditor_id"    />
+        <result property="auditorName"    column="auditor_name"    />
+        <result property="auditTime"    column="audit_time"    />
+        <result property="auditStatus"    column="audit_status"    />
+        <result property="auditComment"    column="audit_comment"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <resultMap id="ScmSaleOrderScmSaleOrderItemResult" type="ScmSaleOrderVo" extends="ScmSaleOrderResult">
+        <collection property="scmSaleOrderItemList" notNullColumn="sub_id" javaType="java.util.List" resultMap="ScmSaleOrderItemResult" />
+    </resultMap>
+
+    <resultMap type="ScmSaleOrderItemVo" id="ScmSaleOrderItemResult">
+        <result property="id"    column="sub_id"    />
+        <result property="orderId"    column="sub_order_id"    />
+        <result property="materialId"    column="sub_material_id"    />
+        <result property="materialName"    column="sub_material_name"    />
+        <result property="materialModel"    column="sub_material_model"    />
+        <result property="materialSpecifications"    column="sub_material_specifications"    />
+        <result property="materialUnit"    column="sub_material_unit"    />
+        <result property="materialPrice"    column="sub_material_price"    />
+        <result property="quantity"    column="sub_quantity"    />
+        <result property="amount"    column="sub_amount"    />
+        <result property="remark"    column="sub_remark"    />
+    </resultMap>
+
+    <sql id="selectScmSaleOrderVo">
+        select a.id, order_no, custom_id, b.custom_name, b.linkman, b.linkman_phone_number, total_amount, delivery_date, apply_id, c.user_name as apply_name, apply_date, apply_status, auditor_id, d.user_name as auditor_name, audit_time, audit_status, audit_comment, a.remark from scm_sale_order a
+    </sql>
+
+    <select id="selectScmSaleOrderList" parameterType="ScmSaleOrder" resultMap="ScmSaleOrderResult">
+        <include refid="selectScmSaleOrderVo"/>
+        left join scm_sale_custom b on a.custom_id = b.id
+        left join sys_user c on a.apply_id = c.user_id
+        left join sys_user d on a.auditor_id = d.user_id
+--         left join scm_sale_schedule e on a.schedule_id = e.id
+        <where>
+            <if test="orderNo != null  and orderNo != ''"> and order_no like concat('%', #{orderNo}, '%')</if>
+            <if test="customId != null  and customId != ''"> and custom_id = #{customId}</if>
+            <if test="params.beginDeliveryDate != null and params.beginDeliveryDate != '' and params.endDeliveryDate != null and params.endDeliveryDate != ''"> and delivery_date between #{params.beginDeliveryDate} and #{params.endDeliveryDate}</if>
+            <if test="applyId != null  and applyId != ''"> and apply_id = #{applyId}</if>
+            <if test="params.beginApplyDate != null and params.beginApplyDate != '' and params.endApplyDate != null and params.endApplyDate != ''"> and apply_date between #{params.beginApplyDate} and #{params.endApplyDate}</if>
+            <if test="applyStatus != null  and applyStatus != ''"> and apply_status = #{applyStatus}</if>
+            <if test="auditorId != null  and auditorId != ''"> and auditor_id = #{auditorId}</if>
+            <if test="params.beginAuditTime != null and params.beginAuditTime != '' and params.endAuditTime != null and params.endAuditTime != ''"> and audit_time between #{params.beginAuditTime} and #{params.endAuditTime}</if>
+            <if test="auditStatus != null  and auditStatus != ''"> and audit_status = #{auditStatus}</if>
+        </where>
+    </select>
+    
+    <select id="selectScmSaleOrderById" parameterType="Long" resultMap="ScmSaleOrderScmSaleOrderItemResult">
+        select a.id, a.order_no, a.custom_id, c.custom_name, c.linkman, c.linkman_phone_number, a.total_amount, a.delivery_date, a.apply_id, d.user_name, a.apply_date, a.apply_status, a.auditor_id, e.user_name, a.audit_time, a.audit_status, a.audit_comment, a.remark,
+ b.id as sub_id, b.order_id as sub_order_id, b.material_id as sub_material_id, f.material_name as sub_material_name, f.material_model as sub_material_model, f.material_specifications as sub_material_specifications, f.material_unit as sub_material_unit, f.material_price as sub_material_price, b.quantity as sub_quantity, b.amount as sub_amount, b.remark as sub_remark
+        from scm_sale_order a
+        left join scm_sale_order_item b on b.order_id = a.id
+        left join scm_sale_custom c on a.custom_id = c.id
+        left join sys_user d on a.apply_id = d.user_id
+        left join sys_user e on a.auditor_id = e.user_id
+        left join wms_material f on b.material_id = f.id
+        where a.id = #{id}
+    </select>
+        
+    <insert id="insertScmSaleOrder" parameterType="ScmSaleOrder" useGeneratedKeys="true" keyProperty="id">
+        insert into scm_sale_order
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="orderNo != null">order_no,</if>
+            <if test="customId != null">custom_id,</if>
+            <if test="totalAmount != null">total_amount,</if>
+            <if test="deliveryDate != null">delivery_date,</if>
+            <if test="applyId != null">apply_id,</if>
+            <if test="applyDate != null">apply_date,</if>
+            <if test="applyStatus != null">apply_status,</if>
+            <if test="auditorId != null">auditor_id,</if>
+            <if test="auditTime != null">audit_time,</if>
+            <if test="auditStatus != null">audit_status,</if>
+            <if test="auditComment != null">audit_comment,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="orderNo != null">#{orderNo},</if>
+            <if test="customId != null">#{customId},</if>
+            <if test="totalAmount != null">#{totalAmount},</if>
+            <if test="deliveryDate != null">#{deliveryDate},</if>
+            <if test="applyId != null">#{applyId},</if>
+            <if test="applyDate != null">#{applyDate},</if>
+            <if test="applyStatus != null">#{applyStatus},</if>
+            <if test="auditorId != null">#{auditorId},</if>
+            <if test="auditTime != null">#{auditTime},</if>
+            <if test="auditStatus != null">#{auditStatus},</if>
+            <if test="auditComment != null">#{auditComment},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateScmSaleOrder" parameterType="ScmSaleOrder">
+        update scm_sale_order
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="orderNo != null">order_no = #{orderNo},</if>
+            <if test="customId != null">custom_id = #{customId},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="deliveryDate != null">delivery_date = #{deliveryDate},</if>
+            <if test="applyId != null">apply_id = #{applyId},</if>
+            <if test="applyDate != null">apply_date = #{applyDate},</if>
+            <if test="applyStatus != null">apply_status = #{applyStatus},</if>
+            <if test="auditorId != null">auditor_id = #{auditorId},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
+            <if test="auditStatus != null">audit_status = #{auditStatus},</if>
+            <if test="auditComment != null">audit_comment = #{auditComment},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteScmSaleOrderById" parameterType="Long">
+        delete from scm_sale_order where id = #{id}
+    </delete>
+
+    <delete id="deleteScmSaleOrderByIds" parameterType="String">
+        delete from scm_sale_order where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <delete id="deleteScmSaleOrderItemByOrderIds" parameterType="String">
+        delete from scm_sale_order_item where order_id in
+        <foreach item="orderId" collection="array" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteScmSaleOrderItemByOrderId" parameterType="Long">
+        delete from scm_sale_order_item where order_id = #{orderId}
+    </delete>
+
+    <insert id="batchScmSaleOrderItem">
+        insert into scm_sale_order_item( id, order_id, material_id, quantity, amount, remark) values
+		<foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.id}, #{item.orderId}, #{item.materialId}, #{item.quantity}, #{item.amount}, #{item.remark})
+        </foreach>
+    </insert>
+</mapper>

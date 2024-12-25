@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhonghui.mes.mapper.MesProductionPlanItemMapper">
+    
+    <resultMap type="MesProductionPlanItemVo" id="MesProductionPlanItemResult">
+        <result property="id"    column="id"    />
+        <result property="planId"    column="plan_id"    />
+        <result property="planNumber"    column="plan_number"    />
+        <result property="projectName"    column="project_name"    />
+        <result property="deliveryDate"    column="delivery_date"    />
+        <result property="materialId"    column="material_id"    />
+        <result property="materialName"    column="material_Name"    />
+        <result property="materialModel"    column="material_model"    />
+        <result property="materialSpecifications"    column="material_specifications"    />
+        <result property="materialUnit"    column="material_unit"    />
+        <result property="quantity"    column="quantity"    />
+        <result property="manufacture"    column="manufacture"    />
+    </resultMap>
+
+    <sql id="selectMesProductionPlanItemVo">
+        select
+            a.id,
+            a.plan_id,
+            b.plan_number,
+            d.project_name,
+            b.delivery_date,
+            a.material_id,
+            c.material_name,
+            c.material_model,
+            c.material_specifications,
+            c.material_unit,
+            a.quantity,
+            a.manufacture
+        from
+            mes_production_plan_item a
+    </sql>
+
+    <select id="selectMesProductionPlanItemList" parameterType="MesProductionPlanItemVo" resultMap="MesProductionPlanItemResult">
+        <include refid="selectMesProductionPlanItemVo"/>
+        left join mes_production_plan b on a.plan_id = b.id
+        left join wms_material c on a.material_id = c.id
+        left join mes_project_maintenance d on b.project_id = d.id
+        <where>
+            b.reviewer_status = 1
+            <if test="planId != null "> and a.plan_id = #{planId}</if>
+            <if test="materialId != null "> and a.material_id = #{materialId}</if>
+            <if test="materialName != null  and materialName != ''"> and c.material_name like concat('%', #{materialName}, '%')</if>
+            <if test="quantity != null "> and a.quantity = #{quantity}</if>
+            <if test="manufacture != null "> and a.manufacture = #{manufacture}</if>
+        </where>
+    </select>
+    
+    <select id="selectMesProductionPlanItemById" parameterType="Long" resultMap="MesProductionPlanItemResult">
+        <include refid="selectMesProductionPlanItemVo"/>
+        where a.id = #{id}
+    </select>
+        
+    <insert id="insertMesProductionPlanItem" parameterType="MesProductionPlanItem" useGeneratedKeys="true" keyProperty="id">
+        insert into mes_production_plan_item
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planId != null">plan_id,</if>
+            <if test="materialId != null">material_id,</if>
+            <if test="quantity != null">quantity,</if>
+            <if test="manufacture != null">manufacture,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="planId != null">#{planId},</if>
+            <if test="materialId != null">#{materialId},</if>
+            <if test="quantity != null">#{quantity},</if>
+            <if test="manufacture != null">#{manufacture},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMesProductionPlanItem" parameterType="MesProductionPlanItem">
+        update mes_production_plan_item
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="planId != null">plan_id = #{planId},</if>
+            <if test="materialId != null">material_id = #{materialId},</if>
+            <if test="quantity != null">quantity = #{quantity},</if>
+            <if test="manufacture != null">manufacture = #{manufacture},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMesProductionPlanItemById" parameterType="Long">
+        delete from mes_production_plan_item where id = #{id}
+    </delete>
+
+    <delete id="deleteMesProductionPlanItemByIds" parameterType="String">
+        delete from mes_production_plan_item where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

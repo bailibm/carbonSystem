@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhonghui.mes.mapper.MesProductionPlanMapper">
+    
+    <resultMap type="MesProductionPlanVo" id="MesProductionPlanResult">
+        <result property="id"    column="id"    />
+        <result property="planNumber"    column="plan_number"    />
+        <result property="saleOrderId"    column="sale_order_id"    />
+        <result property="saleOrderNo"    column="sale_order_no"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="projectName"    column="project_name"    />
+        <result property="name"    column="name"    />
+        <result property="deliveryDate"    column="delivery_date"    />
+        <result property="applicant"    column="applicant"    />
+        <result property="applicantName"    column="applicant_name"    />
+        <result property="applicantDate"    column="applicant_date"    />
+        <result property="applicantStatus"    column="applicant_status"    />
+        <result property="reviewer"    column="reviewer"    />
+        <result property="reviewerName"    column="reviewer_name"    />
+        <result property="reviewerDate"    column="reviewer_date"    />
+        <result property="reviewerStatus"    column="reviewer_status"    />
+        <result property="remark"    column="remark"    />
+        <result property="reviewComments"    column="review_comments"    />
+    </resultMap>
+
+    <resultMap id="MesProductionPlanMesProductionPlanItemResult" type="MesProductionPlanVo" extends="MesProductionPlanResult">
+        <collection property="mesProductionPlanItemList" notNullColumn="sub_id" javaType="java.util.List" resultMap="MesProductionPlanItemResult" />
+    </resultMap>
+
+    <resultMap type="MesProductionPlanItemVo" id="MesProductionPlanItemResult">
+        <result property="id"    column="sub_id"    />
+        <result property="quantity"    column="sub_quantity"    />
+        <result property="materialId"    column="sub_material_id"    />
+        <result property="manufacture"    column="sub_manufacture"    />
+        <result property="planId"    column="sub_plan_id"    />
+        <result property="materialName"    column="sub_material_name"    />
+        <result property="materialModel"    column="sub_material_model"    />
+        <result property="materialSpecifications"    column="sub_material_specifications"   />
+        <result property="materialUnit"    column="sub_material_unit"   />
+    </resultMap>
+
+    <sql id="selectMesProductionPlanVo">
+        select a.id, plan_number, sale_order_id, project_id, b.project_name, name, delivery_date, applicant, c.user_name as applicant_name, applicant_date, applicant_status, reviewer, d.user_name as reviewer_name, reviewer_date, reviewer_status, a.remark, review_comments from mes_production_plan a
+    </sql>
+
+    <select id="selectMesProductionPlanList" parameterType="MesProductionPlan" resultMap="MesProductionPlanResult">
+        <include refid="selectMesProductionPlanVo"/>
+        left join mes_project_maintenance b on a.project_id = b.id
+        left join sys_user c on a.applicant = c.user_id
+        left join sys_user d on a.reviewer = d.user_id
+        <where>  
+            <if test="planNumber != null  and planNumber != ''"> and plan_number like concat('%', #{planNumber}, '%')</if>
+            <if test="projectId != null  and projectId != ''"> and project_id = #{projectId}</if>
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="params.beginDeliveryDate != null and params.beginDeliveryDate != '' and params.endDeliveryDate != null and params.endDeliveryDate != ''"> and delivery_date between #{params.beginDeliveryDate} and #{params.endDeliveryDate}</if>
+            <if test="applicant != null  and applicant != ''"> and applicant = #{applicant}</if>
+            <if test="params.beginApplicantDate != null and params.beginApplicantDate != '' and params.endApplicantDate != null and params.endApplicantDate != ''"> and applicant_date between #{params.beginApplicantDate} and #{params.endApplicantDate}</if>
+            <if test="applicantStatus != null  and applicantStatus != ''"> and applicant_status like concat('%', #{applicantStatus}, '%')</if>
+            <if test="reviewer != null  and reviewer != ''"> and reviewer = #{reviewer}</if>
+            <if test="params.beginReviewerDate != null and params.beginReviewerDate != '' and params.endReviewerDate != null and params.endReviewerDate != ''"> and reviewer_date between #{params.beginReviewerDate} and #{params.endReviewerDate}</if>
+            <if test="reviewerStatus != null  and reviewerStatus != ''"> and reviewer_status like concat('%', #{reviewerStatus}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectMesProductionPlanById" parameterType="Long" resultMap="MesProductionPlanMesProductionPlanItemResult">
+        select a.id, a.plan_number, a.sale_order_id, d.order_no as sale_order_no, a.project_id, a.name, a.delivery_date, a.applicant, a.applicant_date, a.applicant_status, a.reviewer, a.reviewer_date, a.reviewer_status, a.remark, a.review_comments,
+ b.id as sub_id, b.quantity as sub_quantity, b.material_id as sub_material_id, b.manufacture as sub_manufacture, b.plan_id as sub_plan_id, c.material_name as sub_material_name, c.material_model as sub_material_model, c.material_specifications as sub_material_specifications, c.material_unit as sub_material_unit
+        from mes_production_plan a
+        left join mes_production_plan_item b on b.plan_id = a.id
+        left join wms_material c on b.material_id = c.id
+        left join scm_sale_order d on a.sale_order_id = d.id
+        where a.id = #{id}
+    </select>
+        
+    <insert id="insertMesProductionPlan" parameterType="MesProductionPlan" useGeneratedKeys="true" keyProperty="id">
+        insert into mes_production_plan
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planNumber != null">plan_number,</if>
+            <if test="saleOrderId != null">sale_order_id,</if>
+            <if test="projectId != null">project_id,</if>
+            <if test="name != null">name,</if>
+            <if test="deliveryDate != null">delivery_date,</if>
+            <if test="applicant != null">applicant,</if>
+            <if test="applicantDate != null">applicant_date,</if>
+            <if test="applicantStatus != null">applicant_status,</if>
+            <if test="reviewer != null">reviewer,</if>
+            <if test="reviewerDate != null">reviewer_date,</if>
+            <if test="reviewerStatus != null">reviewer_status,</if>
+            <if test="remark != null">remark,</if>
+            <if test="reviewComments != null">review_comments,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="planNumber != null">#{planNumber},</if>
+            <if test="saleOrderId != null">#{saleOrderId},</if>
+            <if test="projectId != null">#{projectId},</if>
+            <if test="name != null">#{name},</if>
+            <if test="deliveryDate != null">#{deliveryDate},</if>
+            <if test="applicant != null">#{applicant},</if>
+            <if test="applicantDate != null">#{applicantDate},</if>
+            <if test="applicantStatus != null">#{applicantStatus},</if>
+            <if test="reviewer != null">#{reviewer},</if>
+            <if test="reviewerDate != null">#{reviewerDate},</if>
+            <if test="reviewerStatus != null">#{reviewerStatus},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="reviewComments != null">#{reviewComments},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMesProductionPlan" parameterType="MesProductionPlan">
+        update mes_production_plan
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="planNumber != null">plan_number = #{planNumber},</if>
+            <if test="saleOrderId != null">sale_order_id = #{saleOrderId},</if>
+            <if test="projectId != null">project_id = #{projectId},</if>
+            <if test="name != null">name = #{name},</if>
+            <if test="deliveryDate != null">delivery_date = #{deliveryDate},</if>
+            <if test="applicant != null">applicant = #{applicant},</if>
+            <if test="applicantDate != null">applicant_date = #{applicantDate},</if>
+            <if test="applicantStatus != null">applicant_status = #{applicantStatus},</if>
+            <if test="reviewer != null">reviewer = #{reviewer},</if>
+            <if test="reviewerDate != null">reviewer_date = #{reviewerDate},</if>
+            <if test="reviewerStatus != null">reviewer_status = #{reviewerStatus},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="reviewComments != null">review_comments = #{reviewComments},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMesProductionPlanById" parameterType="Long">
+        delete from mes_production_plan where id = #{id}
+    </delete>
+
+    <delete id="deleteMesProductionPlanByIds" parameterType="String">
+        delete from mes_production_plan where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteMesProductionPlanItemByPlanIds" parameterType="String">
+        delete from mes_production_plan_item where plan_id in 
+        <foreach item="planId" collection="array" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteMesProductionPlanItemByPlanId" parameterType="Long">
+        delete from mes_production_plan_item where plan_id = #{planId}
+    </delete>
+
+    <insert id="batchMesProductionPlanItem">
+        insert into mes_production_plan_item( id, quantity, material_id, manufacture, plan_id) values
+		<foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.id}, #{item.quantity}, #{item.materialId}, #{item.manufacture}, #{item.planId})
+        </foreach>
+    </insert>
+</mapper>
