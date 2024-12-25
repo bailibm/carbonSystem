@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhonghui.mes.mapper.MesTechnologyMapper">
+
+    <resultMap type="MesTechnologyVo" id="MesTechnologyResult">
+        <result property="id"    column="id"    />
+        <result property="technologyName"    column="technology_name"    />
+        <result property="materialId"    column="material_id"    />
+        <result property="unitPowerConsumption"    column="unit_power_consumption"    />
+        <result property="remark"    column="remark"    />
+        <result property="technologyDescribe"    column="technology_describe"    />
+        <result property="materialName"    column="material_name"    />
+        <result property="materialModel"    column="material_model"    />
+        <result property="materialSpecifications"    column="material_specifications"    />
+        <result property="materialUnit"    column="material_unit"    />
+    </resultMap>
+
+    <select id="selectMesTechnologyList" parameterType="MesTechnology" resultMap="MesTechnologyResult">
+        select a.id, a.technology_name, a.material_id, a.unit_power_consumption, a.remark, a.technology_describe, b.material_name, b.material_model, b.material_specifications, b.material_unit
+        from mes_technology a
+        left join wms_material b on b.id = a.material_id
+        <where>
+            <if test="technologyName != null  and technologyName != ''"> and technology_name like concat('%', #{technologyName}, '%')</if>
+            <if test="materialId != null  and materialId != ''"> and material_id = #{materialId}</if>
+        </where>
+    </select>
+
+    <select id="selectMesTechnologyById" parameterType="Long" resultMap="MesTechnologyResult">
+        select a.id, a.technology_name, a.material_id, a.unit_power_consumption, a.remark, a.technology_describe, b.material_name, b.material_model, b.material_specifications, b.material_unit
+        from mes_technology a
+        left join wms_material b on b.id = a.material_id
+        where a.id = #{id}
+    </select>
+
+    <insert id="insertMesTechnology" parameterType="MesTechnology">
+        insert into mes_technology
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="technologyName != null and technologyName != ''">technology_name,</if>
+            <if test="materialId != null and materialId != ''">material_id,</if>
+            <if test="unitPowerConsumption != null and unitPowerConsumption != ''">unit_power_consumption,</if>
+            <if test="remark != null">remark,</if>
+            <if test="technologyDescribe != null">technology_describe,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="technologyName != null and technologyName != ''">#{technologyName},</if>
+            <if test="materialId != null and materialId != ''">#{materialId},</if>
+            <if test="unitPowerConsumption != null and unitPowerConsumption != ''">#{unitPowerConsumption},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="technologyDescribe != null">#{technologyDescribe},</if>
+        </trim>
+    </insert>
+
+    <update id="updateMesTechnology" parameterType="MesTechnology">
+        update mes_technology
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="technologyName != null and technologyName != ''">technology_name = #{technologyName},</if>
+            <if test="materialId != null and materialId != ''">material_id = #{materialId},</if>
+            <if test="unitPowerConsumption != null and unitPowerConsumption != ''">unit_power_consumption = #{unitPowerConsumption},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="technologyDescribe != null">technology_describe = #{technologyDescribe},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMesTechnologyById" parameterType="Long">
+        delete from mes_technology where id = #{id}
+    </delete>
+
+    <delete id="deleteMesTechnologyByIds" parameterType="String">
+        delete from mes_technology where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

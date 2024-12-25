@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhonghui.wms.mapper.WmsWarehouseSeatMapper">
+    
+    <resultMap type="WmsWarehouseSeat" id="WmsWarehouseSeatResult">
+        <result property="id"    column="id"    />
+        <result property="warehouseAreaId"    column="warehouse_area_id"    />
+        <result property="seatCode"    column="seat_code"    />
+        <result property="seatName"    column="seat_name"    />
+    </resultMap>
+
+    <sql id="selectWmsWarehouseSeatVo">
+        select id, warehouse_area_id, seat_code, seat_name from wms_warehouse_seat
+    </sql>
+
+    <select id="selectWmsWarehouseSeatList" parameterType="WmsWarehouseSeat" resultMap="WmsWarehouseSeatResult">
+        <include refid="selectWmsWarehouseSeatVo"/>
+        <where>  
+            <if test="warehouseAreaId != null "> and warehouse_area_id = #{warehouseAreaId}</if>
+            <if test="seatCode != null  and seatCode != ''"> and seat_code = #{seatCode}</if>
+            <if test="seatName != null  and seatName != ''"> and seat_name like concat('%', #{seatName}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectWmsWarehouseSeatById" parameterType="Long" resultMap="WmsWarehouseSeatResult">
+        <include refid="selectWmsWarehouseSeatVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertWmsWarehouseSeat" parameterType="WmsWarehouseSeat" useGeneratedKeys="true" keyProperty="id">
+        insert into wms_warehouse_seat
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="warehouseAreaId != null">warehouse_area_id,</if>
+            <if test="seatCode != null">seat_code,</if>
+            <if test="seatName != null">seat_name,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="warehouseAreaId != null">#{warehouseAreaId},</if>
+            <if test="seatCode != null">#{seatCode},</if>
+            <if test="seatName != null">#{seatName},</if>
+         </trim>
+    </insert>
+
+    <update id="updateWmsWarehouseSeat" parameterType="WmsWarehouseSeat">
+        update wms_warehouse_seat
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="warehouseAreaId != null">warehouse_area_id = #{warehouseAreaId},</if>
+            <if test="seatCode != null">seat_code = #{seatCode},</if>
+            <if test="seatName != null">seat_name = #{seatName},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteWmsWarehouseSeatById" parameterType="Long">
+        delete from wms_warehouse_seat where id = #{id}
+    </delete>
+
+    <delete id="deleteWmsWarehouseSeatByIds" parameterType="String">
+        delete from wms_warehouse_seat where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

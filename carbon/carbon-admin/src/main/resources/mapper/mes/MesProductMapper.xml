@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhonghui.mes.mapper.MesProductMapper">
+    
+    <resultMap type="MesProduct" id="MesProductResult">
+        <result property="id"    column="id"    />
+        <result property="modeName"    column="mode_name"    />
+        <result property="materialId"    column="material_id"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <resultMap type="MesProductVo" id="MesProductVoResult">
+        <result property="id"    column="id"    />
+        <result property="modeName"    column="mode_name"    />
+        <result property="materialId"    column="material_id"    />
+        <result property="materialName"    column="material_name"    />
+        <result property="materialModel"    column="material_model"    />
+        <result property="materialSpecifications"    column="material_specifications"    />
+        <result property="materialUnit"    column="material_unit"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <resultMap id="MesProductMesProductMaterialItemResult" type="MesProductVo" extends="MesProductVoResult">
+        <collection property="mesProductMaterialItemList" notNullColumn="sub_id" javaType="java.util.List" resultMap="MesProductMaterialItemResult" />
+    </resultMap>
+
+    <resultMap type="MesProductMaterialItemVo" id="MesProductMaterialItemResult">
+        <result property="id"    column="sub_id"    />
+        <result property="productId"    column="sub_product_id"    />
+        <result property="materialId"    column="sub_material_id"    />
+        <result property="materialName"    column="sub_material_name"    />
+        <result property="materialModel"    column="sub_material_model"    />
+        <result property="materialSpecifications"    column="sub_material_specifications"    />
+        <result property="materialUnit"    column="sub_material_unit"    />
+        <result property="remark"    column="sub_remark"    />
+    </resultMap>
+
+    <sql id="selectMesProductVo">
+        select a.id, mode_name, material_id, b.material_name, b.material_model, b.material_specifications, b.material_unit, a.remark from mes_product a
+    </sql>
+
+    <select id="selectMesProductList" parameterType="MesProduct" resultMap="MesProductVoResult">
+        <include refid="selectMesProductVo"/>
+        left join wms_material b on a.material_id = b.id
+        <where>  
+            <if test="modeName != null  and modeName != ''"> and mode_name like concat('%', #{modeName}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectMesProductById" parameterType="Long" resultMap="MesProductMesProductMaterialItemResult">
+        select a.id, a.mode_name, a.material_id, c.material_name, c.material_model, c.material_specifications, c.material_unit, a.remark,
+ b.id as sub_id, b.product_id as sub_product_id, b.material_id as sub_material_id, b.remark as sub_remark, d.material_name as sub_material_name, d.material_model as sub_material_model, d.material_specifications as sub_material_specifications, d.material_unit as sub_material_unit
+        from mes_product a
+        left join mes_product_material_item b on b.product_id = a.id
+        left join wms_material c on a.material_id = c.id
+        left join wms_material d on b.material_id = d.id
+        where a.id = #{id}
+    </select>
+        
+    <insert id="insertMesProduct" parameterType="MesProduct" useGeneratedKeys="true" keyProperty="id">
+        insert into mes_product
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="modeName != null and modeName != ''">mode_name,</if>
+            <if test="materialId != null and materialId != ''">material_id,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="modeName != null and modeName != ''">#{modeName},</if>
+            <if test="materialId != null and materialId != ''">#{materialId},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMesProduct" parameterType="MesProduct">
+        update mes_product
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="modeName != null and modeName != ''">mode_name = #{modeName},</if>
+            <if test="materialId != null and materialId != ''">material_id = #{materialId},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMesProductById" parameterType="Long">
+        delete from mes_product where id = #{id}
+    </delete>
+
+    <delete id="deleteMesProductByIds" parameterType="String">
+        delete from mes_product where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <delete id="deleteMesProductMaterialItemByProductIds" parameterType="String">
+        delete from mes_product_material_item where product_id in
+        <foreach item="productId" collection="array" open="(" separator="," close=")">
+            #{productId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteMesProductMaterialItemByProductId" parameterType="Long">
+        delete from mes_product_material_item where product_id = #{productId}
+    </delete>
+
+    <insert id="batchMesProductMaterialItem">
+        insert into mes_product_material_item( id, product_id, material_id, remark) values
+		<foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.id}, #{item.productId}, #{item.materialId}, #{item.remark})
+        </foreach>
+    </insert>
+
+    <select id="selectMesProductByMaterialIds" parameterType="String" resultMap="MesProductResult">
+        select * from mes_product where material_id in
+        <foreach item="materialId" collection="array" open="(" separator="," close=")">
+            #{materialId}
+        </foreach>
+    </select>
+</mapper>

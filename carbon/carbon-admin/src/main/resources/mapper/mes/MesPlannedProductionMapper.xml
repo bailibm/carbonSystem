@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhonghui.mes.mapper.MesPlannedProductionMapper">
+    
+    <resultMap type="MesPlannedProductionVo" id="MesPlannedProductionResult">
+        <result property="id"    column="id"    />
+        <result property="serialNo"    column="serial_no"    />
+        <result property="productionPlanId"    column="production_plan_id"    />
+        <result property="planNumber"    column="plan_number"    />
+        <result property="materialId"    column="material_id"    />
+        <result property="materialName"    column="material_Name"    />
+        <result property="materialModel"    column="material_model"    />
+        <result property="materialSpecifications"    column="material_specifications"    />
+        <result property="materialUnit"    column="material_unit"    />
+        <result property="bomId"    column="bom_id"    />
+        <result property="bomName"    column="bom_name"    />
+        <result property="factoryId"    column="factory_id"    />
+        <result property="productionLine"    column="production_line"    />
+        <result property="technologyId"    column="technology_id"    />
+        <result property="technologyName"    column="technology_name"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="projectName"    column="project_name"    />
+        <result property="producedQuantity"    column="produced_quantity"    />
+        <result property="quantityProduced"    column="quantity_produced"    />
+        <result property="manufactureDate"    column="manufacture_date"    />
+        <result property="deliveryDate"    column="delivery_date"    />
+        <result property="pickingStatus"    column="picking_status"    />
+        <result property="status"    column="status"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <resultMap id="MesPlannedProductionMesPlannedProductionItemResult" type="MesPlannedProductionVo" extends="MesPlannedProductionResult">
+        <collection property="mesPlannedProductionItemList" notNullColumn="sub_id" javaType="java.util.List" resultMap="MesPlannedProductionItemResult" />
+    </resultMap>
+
+    <resultMap type="MesPlannedProductionItemVo" id="MesPlannedProductionItemResult">
+        <result property="id"    column="sub_id"    />
+        <result property="productionId"    column="sub_production_id"    />
+        <result property="materialId"    column="sub_material_id"    />
+        <result property="materialName"    column="sub_material_name"    />
+        <result property="materialModel"    column="sub_material_model"    />
+        <result property="materialSpecifications"    column="sub_material_specifications"    />
+        <result property="materialUnit"    column="sub_material_unit"    />
+        <result property="dosage"    column="sub_dosage"    />
+        <result property="usedQuantity"    column="sub_used_quantity"    />
+        <result property="residueQuantity"    column="sub_residue_quantity"    />
+        <result property="remark"    column="sub_remark"    />
+    </resultMap>
+
+    <sql id="selectMesPlannedProductionVo">
+        select
+            a.id,
+            a.serial_no,
+            a.production_plan_id,
+            b.plan_number,
+            a.material_id,
+            d.material_name,
+            d.material_model,
+            d.material_specifications,
+            d.material_unit,
+            a.bom_id,
+            c.name as bom_name,
+            a.factory_id,
+            f.production_line,
+            a.technology_id,
+            g.technology_name,
+            b.project_id,
+            e.project_name,
+            a.produced_quantity,
+            a.quantity_produced,
+            a.manufacture_date,
+            a.delivery_date,
+            a.picking_status,
+            a.remark,
+            a.status
+        from
+            mes_planned_production a
+    </sql>
+
+    <select id="selectMesPlannedProductionList" parameterType="MesPlannedProduction" resultMap="MesPlannedProductionResult">
+        <include refid="selectMesPlannedProductionVo"/>
+        left join mes_production_plan b on a.production_plan_id = b.id
+        left join mes_bom c on a.bom_id = c.id
+        left join wms_material d on a.material_id = d.id
+        left join mes_project_maintenance e on b.project_id = e.id
+        left join mes_factory f on a.factory_id = f.id
+        left join mes_technology g on a.technology_id = g.id
+        <where>
+            <if test="serialNo != null  and serialNo != ''"> and a.serial_no like concat('%', #{serialNo}, '%')</if>
+            <if test="planNumber != null  and planNumber != ''"> and b.plan_number like concat('%', #{planNumber}, '%')</if>
+            <if test="materialName != null  and materialName != ''"> and d.material_name like concat('%', #{materialName}, '%')</if>
+            <if test="bomId != null  and bomId != ''"> and a.bom_id = #{bomId}</if>
+            <if test="factoryId != null  and factoryId != ''"> and a.factory_id = #{factoryId}</if>
+            <if test="technologyId != null  and technologyId != ''"> and a.technology_id = #{technologyId}</if>
+            <if test="projectId != null  and projectId != ''"> and b.project_id = #{projectId}</if>
+            <if test="params.beginManufactureDate != null and params.beginManufactureDate != '' and params.endManufactureDate != null and params.endManufactureDate != ''"> and a.manufacture_date between #{params.beginManufactureDate} and #{params.endManufactureDate}</if>
+            <if test="params.beginDeliveryDate != null and params.beginDeliveryDate != '' and params.endDeliveryDate != null and params.endDeliveryDate != ''"> and a.delivery_date between #{params.beginDeliveryDate} and #{params.endDeliveryDate}</if>
+            <if test="status != null  and status != ''"> and a.status = #{status}</if>
+        </where>
+    </select>
+    
+    <select id="selectMesPlannedProductionById" parameterType="Long" resultMap="MesPlannedProductionMesPlannedProductionItemResult">
+        select a.id, a.serial_no, a.production_plan_id, i.plan_number, c.product_id, a.material_id, e.material_name, e.material_model, e.material_specifications, e.material_unit, a.bom_id, c.name as bom_name, a.factory_id, g.production_line, a.technology_id, h.technology_name, i.project_id, f.project_name, a.produced_quantity, a.quantity_produced, a.manufacture_date, a.delivery_date, a.picking_status, a.remark, a.status,
+ b.id as sub_id, b.production_id as sub_production_id, b.material_id as sub_material_id, j.material_name as sub_material_name, j.material_model as sub_material_model, j.material_specifications as sub_material_specifications, j.material_unit as sub_material_unit, b.dosage as sub_dosage, b.used_quantity as sub_used_quantity, b.residue_quantity as sub_residue_quantity, b.remark as sub_remark
+        from mes_planned_production a
+        left join mes_planned_production_item b on b.production_id = a.id
+        left join mes_production_plan i on a.production_plan_id = i.id
+        left join mes_bom c on a.bom_id = c.id
+        left join wms_material e on a.material_id = e.id
+        left join mes_project_maintenance f on i.project_id = f.id
+        left join mes_factory g on a.factory_id = g.id
+        left join mes_technology h on a.technology_id = h.id
+        left join wms_material j on b.material_id = j.id
+        where a.id = #{id}
+    </select>
+
+    <insert id="insertMesPlannedProduction" parameterType="MesPlannedProduction" useGeneratedKeys="true" keyProperty="id">
+        insert into mes_planned_production
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="serialNo != null">serial_no,</if>
+            <if test="productionPlanId != null and productionPlanId != ''">production_plan_id,</if>
+            <if test="materialId != null and materialId != ''">material_id,</if>
+            <if test="bomId != null and bomId != ''">bom_id,</if>
+            <if test="factoryId != null and factoryId != ''">factory_id,</if>
+            <if test="technologyId != null and technologyId != ''">technology_id,</if>
+            <if test="producedQuantity != null">produced_quantity,</if>
+            <if test="quantityProduced != null">quantity_produced,</if>
+            <if test="manufactureDate != null">manufacture_date,</if>
+            <if test="deliveryDate != null">delivery_date,</if>
+            <if test="pickingStatus != null">picking_status,</if>
+            <if test="remark != null">remark,</if>
+            <if test="status != null">status,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="serialNo != null">#{serialNo},</if>
+            <if test="productionPlanId != null and productionPlanId != ''">#{productionPlanId},</if>
+            <if test="materialId != null and materialId != ''">#{materialId},</if>
+            <if test="bomId != null and bomId != ''">#{bomId},</if>
+            <if test="factoryId != null and factoryId != ''">#{factoryId},</if>
+            <if test="technologyId != null and technologyId != ''">#{technologyId},</if>
+            <if test="producedQuantity != null">#{producedQuantity},</if>
+            <if test="quantityProduced != null">#{quantityProduced},</if>
+            <if test="manufactureDate != null">#{manufactureDate},</if>
+            <if test="deliveryDate != null">#{deliveryDate},</if>
+            <if test="pickingStatus != null">#{pickingStatus},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="status != null">#{status},</if>
+         </trim>
+    </insert>
+
+    <update id="updateMesPlannedProduction" parameterType="MesPlannedProduction">
+        update mes_planned_production
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="serialNo != null">serial_no = #{serialNo},</if>
+            <if test="productionPlanId != null and productionPlanId != ''">production_plan_id = #{productionPlanId},</if>
+            <if test="materialId != null and materialId != ''">material_id = #{materialId},</if>
+            <if test="bomId != null and bomId != ''">bom_id = #{bomId},</if>
+            <if test="factoryId != null and factoryId != ''">factory_id = #{factoryId},</if>
+            <if test="technologyId != null and technologyId != ''">technology_id = #{technologyId},</if>
+            <if test="producedQuantity != null">produced_quantity = #{producedQuantity},</if>
+            <if test="quantityProduced != null">quantity_produced = #{quantityProduced},</if>
+            <if test="manufactureDate != null">manufacture_date = #{manufactureDate},</if>
+            <if test="deliveryDate != null">delivery_date = #{deliveryDate},</if>
+            <if test="pickingStatus != null">picking_status = #{pickingStatus},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="status != null">status = #{status},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMesPlannedProductionById" parameterType="Long">
+        delete from mes_planned_production where id = #{id}
+    </delete>
+
+    <delete id="deleteMesPlannedProductionByIds" parameterType="String">
+        delete from mes_planned_production where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <delete id="deleteMesPlannedProductionItemByProductionIds" parameterType="String">
+        delete from mes_planned_production_item where production_id in 
+        <foreach item="productionId" collection="array" open="(" separator="," close=")">
+            #{productionId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteMesPlannedProductionItemByProductionId" parameterType="Long">
+        delete from mes_planned_production_item where production_id = #{productionId}
+    </delete>
+
+    <insert id="batchMesPlannedProductionItem">
+        insert into mes_planned_production_item( id, production_id, material_id, dosage, used_quantity, residue_quantity, remark) values
+		<foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.id}, #{item.productionId}, #{item.materialId}, #{item.dosage}, #{item.usedQuantity}, #{item.residueQuantity}, #{item.remark})
+        </foreach>
+    </insert>
+</mapper>
